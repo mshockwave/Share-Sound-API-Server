@@ -10,6 +10,8 @@ import (
 const(
 	USER_AUTH_SESSION = "user-auth"
 	USER_ID_SESSION_KEY = "user_id"
+
+	MAIN_STORAGE_BUCKET = "org-sharesound-main-bucket"
 )
 
 var(

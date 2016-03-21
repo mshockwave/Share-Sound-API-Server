@@ -4,10 +4,20 @@ import(
 	"net/http"
 	"fmt"
 
+	"github.com/gorilla/mux"
+	"github.com/mshockwave/share-sound-api-server/handlers"
 	goHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/context"
 	"github.com/mshockwave/share-sound-api-server/common"
 )
+
+func setUpRouters() *mux.Router{
+	router := mux.NewRouter()
+
+	handlers.ConfigureUserHandlers(router.PathPrefix("/user").Subrouter())
+
+	return router
+}
 
 func setUpCORS() goHandlers.CORSOption{
 	origins := make([]string, 1)
@@ -18,7 +28,7 @@ func setUpCORS() goHandlers.CORSOption{
 
 func main() {
 
-	router := SetUpRouters()
+	router := setUpRouters()
 	allowOrigins := setUpCORS()
 
 	http.Handle("/", router)

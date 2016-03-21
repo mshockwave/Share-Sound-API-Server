@@ -72,4 +72,6 @@ _testmain.go
 *.test
 *.prof
 
-config.yaml
+*.yaml
+
+main
