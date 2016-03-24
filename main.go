@@ -9,6 +9,9 @@ import(
 	goHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/context"
 	"github.com/mshockwave/share-sound-api-server/common"
+
+	_ "github.com/mshockwave/share-sound-api-server/storage"
+	_ "github.com/mshockwave/share-sound-api-server/datastore"
 )
 
 func setUpRouters() *mux.Router{

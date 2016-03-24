@@ -8,6 +8,8 @@ import (
 )
 
 const(
+	PROJECT_ID = "nthu-audios"
+
 	USER_AUTH_SESSION = "user-auth"
 	USER_ID_SESSION_KEY = "user_id"
 
