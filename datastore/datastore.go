@@ -40,3 +40,15 @@ func GetNewDataStoreClient() (*DataStoreClient, error){
 		Ctx: ctx,
 	}, err
 }
+func GetContext() context.Context { return ctx }
+
+func (this *DataStoreClient) NewKey(kind, name string, id int64, parent *datastore.Key) *datastore.Key {
+	//Wrapper
+	return datastore.NewKey(this.Ctx, kind, name, id, parent)
+}
+func (this *DataStoreClient) Run(query *datastore.Query) *datastore.Iterator {
+	return this.Client.Run(this.Ctx, query)
+}
+func (this *DataStoreClient) RunInTransaction(f func(tx *datastore.Transaction) error, opts ...datastore.TransactionOption) (*datastore.Commit, error){
+	return this.Client.RunInTransaction(this.Ctx, f, opts...)
+}

@@ -27,9 +27,16 @@ func ResponseOkAsJson(resp http.ResponseWriter, value interface{}) (int, error){
 	return ResponseStatusAsJson(resp, 200, value)
 }
 func ResponseStatusAsJson(resp http.ResponseWriter, status int, value interface{}) (int, error){
+
+	//Just return status code
+	if(value == nil){
+		resp.WriteHeader(status)
+		return status, nil
+	}
+
 	if j_bytes, err := json.Marshal(value); err != nil {
-		resp.WriteHeader(500)
-		return 500, err
+		resp.WriteHeader(status)
+		return status, err
 	}else{
 		//Restore '&'
 		str := string(j_bytes)

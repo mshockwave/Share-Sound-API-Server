@@ -14,6 +14,8 @@ const(
 	USER_ID_SESSION_KEY = "user_id"
 
 	MAIN_STORAGE_BUCKET = "org-sharesound-main-bucket"
+
+	DEFAULT_USER_THUMBNAIL_PATH = MAIN_STORAGE_BUCKET + "/default-user-image.png"
 )
 
 var(

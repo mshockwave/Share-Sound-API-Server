@@ -3,22 +3,30 @@ import (
 	"errors"
 	"net/http"
 
-	"gopkg.in/mgo.v2/bson"
 	"github.com/mshockwave/share-sound-api-server/common"
+	"github.com/mshockwave/share-sound-api-server/datastore/schema"
+	db "github.com/mshockwave/share-sound-api-server/datastore"
+	"google.golang.org/cloud/datastore"
 )
 
-func GetSessionUserId(req *http.Request) (bson.ObjectId, error){
+var(
+	UserProfileRootKey *datastore.Key
+)
+
+func init(){
+	//Module initializer
+
+	UserProfileRootKey = datastore.NewKey(db.GetContext(), schema.USER_PROFILE_KIND, "admin@sharesound.org", 0, nil)
+}
+
+func GetSessionUserId(req *http.Request) (string, error){
 	if v, err := common.GetSessionValue(req, common.USER_ID_SESSION_KEY); err != nil || v == nil{
-		return bson.ObjectId(""), errors.New("Invalid session id format")
+		return "", errors.New("Invalid session id format")
 	}else{
 		if str, found := v.(string); found {
-			if bson.IsObjectIdHex(str) {
-				return bson.ObjectIdHex(str), nil
-			}else{
-				return bson.ObjectId(""), errors.New("Invalid session id format")
-			}
+			return str, nil
 		}else{
-			return bson.ObjectId(""), errors.New("Invalid session id format")
+			return "", errors.New("Invalid session id format")
 		}
 	}
 }
@@ -26,6 +34,7 @@ func GetSessionUserId(req *http.Request) (bson.ObjectId, error){
 func AuthVerifierWrapper(handler http.HandlerFunc) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request){
 		if _, err := GetSessionUserId(req); err != nil {
+			//common.LogE.Printf("Error session value: %s\n", err.Error())
 			r := common.SimpleResult{
 				Message: "Error",
 				Description: "Please Login First",
