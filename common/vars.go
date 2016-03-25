@@ -16,6 +16,9 @@ const(
 	MAIN_STORAGE_BUCKET = "org-sharesound-main-bucket"
 
 	DEFAULT_USER_THUMBNAIL_PATH = MAIN_STORAGE_BUCKET + "/default-user-image.png"
+
+	//Storage
+	STORAGE_THUMBNAIL_FOLDER = "thumbnails"
 )
 
 var(

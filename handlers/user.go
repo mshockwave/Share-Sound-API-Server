@@ -11,6 +11,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	db "github.com/mshockwave/share-sound-api-server/datastore"
 	"google.golang.org/cloud/datastore"
+	"mime/multipart"
+	"github.com/mshockwave/share-sound-api-server/storage"
+	"strings"
+	"io"
 )
 
 type registerForm struct {
@@ -235,9 +239,120 @@ func handleProfile(resp http.ResponseWriter, req *http.Request){
 				})
 			}
 		}
+	}else if(req.Method == "POST" || req.Method == "PUT"){
+		editProfile(resp, req)
 	}else{
 		//Not supported yet
 		common.ResponseStatusAsJson(resp, 404, nil)
+	}
+}
+
+func editProfile(resp http.ResponseWriter, req *http.Request){
+
+	var userId string
+	if id, err := GetSessionUserId(req); err != nil {
+		common.LogE.Printf("Error fetching user sessoin id: %s\n", err)
+		common.ResponseStatusAsJson(resp, 500, &common.SimpleResult{
+			Message: "Error",
+		})
+		return
+	}else{
+		userId = id
+	}
+
+	if err := req.ParseForm();err != nil {
+		common.LogE.Printf("Edit profile failed: %s\n", err.Error())
+		common.ResponseStatusAsJson(resp, 400, &common.SimpleResult{
+			Message: "Error",
+			Description: "Wrong Edit Format",
+		})
+		return
+	}
+
+	var newPwd string = req.FormValue("password")
+	var thumbnail multipart.File = nil
+	var thumbnailHeader *multipart.FileHeader = nil
+
+	thumbnail, thumbnailHeader, _ = req.FormFile("thumbnail")
+
+	//Change Thumbnail
+	var thumbObjName string = ""
+	if thumbnail != nil {
+		if client, err := storage.GetNewStorageClient(); err == nil{
+			defer client.Close()
+
+			bucket := client.GetDefaultBucket()
+			thumbObjName = common.STORAGE_THUMBNAIL_FOLDER
+			if thumbnailHeader == nil {
+				//No file extension
+				thumbObjName = common.PathJoin(thumbObjName, common.GetDefaultSecureHash())
+			}else{
+				//Keep file extension
+				segs := strings.Split(thumbnailHeader.Filename, ".")
+				if len(segs) > 1 {
+					thumbObjName = common.PathJoin(thumbObjName,
+									common.GetDefaultSecureHash() + "." + segs[len(segs) - 1])
+				}else{
+					thumbObjName = common.PathJoin(thumbObjName, common.GetDefaultSecureHash())
+				}
+			}
+
+			obj := bucket.Object(thumbObjName)
+			w := obj.NewWriter(client.Ctx)
+			if _, e := io.Copy(w, thumbnail); e != nil {
+				common.LogE.Printf("Error writing thumbnail file: %s\n", e)
+				thumbObjName = ""
+			}
+			w.Close()
+		}
+	}
+
+	//Update db entries
+	if client, err := db.GetNewDataStoreClient(); err == nil {
+		user := dbSchema.User{}
+		_, e := client.RunInTransaction(func(tx *datastore.Transaction) error{
+			key := client.NewKey(dbSchema.USER_PROFILE_KIND, userId, 0, UserProfileRootKey)
+
+			if err := tx.Get(key, &user); err != nil {
+				return err
+			}
+
+			//Update password
+			if len(newPwd) > 0{
+				if resBytes, e := bcrypt.GenerateFromPassword([]byte(newPwd), bcrypt.DefaultCost); e == nil{
+					user.Auth.PasswordBcryptHash = string(resBytes)
+					//user.Auth.PasswordBcryptCost = bcrypt.DefaultCost
+				}
+			}
+
+			//Update thumbnail
+			if len(thumbObjName) > 0 {
+				user.Thumbnail = thumbObjName
+			}
+
+			if _, err := tx.Put(key, &user); err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+		if e != nil {
+			common.LogE.Printf("Update user profile of %s failed: %s\n", userId, e)
+			common.ResponseStatusAsJson(resp, 500, &common.SimpleResult{
+				Message: "Error",
+			})
+
+		}else{
+			resProfile := &resultUserProfile{}
+			resProfile.FromDbSchema(&user)
+			common.ResponseOkAsJson(resp, resProfile)
+		}
+	}else{
+		common.LogE.Printf("Get datastore failed: %s\n", err)
+		common.ResponseStatusAsJson(resp, 500, &common.SimpleResult{
+			Message: "Error",
+		})
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"encoding/json"
 	"strings"
+	"github.com/dchest/uniuri"
 )
 
 func GetSessionValue(req *http.Request, key interface{}) (interface{}, error) {
@@ -48,3 +49,9 @@ func ResponseStatusAsJson(resp http.ResponseWriter, status int, value interface{
 		return status, err
 	}
 }
+
+func StringJoin(sep string, elements ...string) string{ return strings.Join(elements, sep) }
+func PathJoin(segs ...string) string {return StringJoin("/", segs...)}
+
+func GetDefaultSecureHash() string { return uniuri.New() }
+func GetSecureHash(length int) string { return uniuri.NewLen(length) }
