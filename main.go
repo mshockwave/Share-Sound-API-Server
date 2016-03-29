@@ -18,6 +18,7 @@ func setUpRouters() *mux.Router{
 	router := mux.NewRouter()
 
 	handlers.ConfigureUserHandlers(router.PathPrefix("/user").Subrouter())
+	handlers.ConfigureStoryHandler(router.PathPrefix("/story").Subrouter())
 
 	return router
 }

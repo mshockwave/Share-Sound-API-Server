@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package protos;
+
+message Location {
+    float longitude = 1;
+    float latitude = 2;
+}
