@@ -50,6 +50,15 @@ func ResponseStatusAsJson(resp http.ResponseWriter, status int, value interface{
 	}
 }
 
+func GetFileExtension(fileName string) string{
+	segs := strings.Split(fileName, ".")
+	if len(segs) > 1 {
+		return "." + segs[len(segs) - 1]
+	}else{
+		return ""
+	}
+}
+
 func StringJoin(sep string, elements ...string) string{ return strings.Join(elements, sep) }
 func PathJoin(segs ...string) string {return StringJoin("/", segs...)}
 

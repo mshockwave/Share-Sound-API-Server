@@ -8,6 +8,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mshockwave/share-sound-api-server/common"
+	"github.com/mshockwave/share-sound-api-server/handlers/protos"
+	"github.com/golang/protobuf/proto"
 )
 
 func handleUpload(resp http.ResponseWriter, req *http.Request){
@@ -17,8 +19,8 @@ func handleUpload(resp http.ResponseWriter, req *http.Request){
 		return
 	}
 
-	contentType, exist := req.Header["Content-Type"]
-	if !exist {
+	contentType := req.Header.Get("Content-Type")
+	if len(contentType) <= 0 {
 		common.ResponseStatusAsJson(resp, 400, &common.SimpleResult{
 			Message: "Error",
 			Description: "Must specify Content-Type",
@@ -61,6 +63,16 @@ func handleUpload(resp http.ResponseWriter, req *http.Request){
 		}
 	}else{
 		bodyContent = bodyRaw
+	}
+
+	//uid,_ := GetSessionUserId(req)
+	story := protos.Story{}
+	if err := proto.Unmarshal(bodyContent, &story); err != nil {
+		common.ResponseStatusAsJson(resp, 400, &common.SimpleResult{
+			Message: "Error",
+			Description: "Wrong binary layout format",
+		})
+		return
 	}
 
 

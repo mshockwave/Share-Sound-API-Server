@@ -19,6 +19,8 @@ const(
 
 	//Storage
 	STORAGE_THUMBNAIL_FOLDER = "thumbnails"
+	STORAGE_AUDIO_FOLDER = "audios"
+	STORAGE_IMAGE_FOLDER = "images"
 )
 
 var(
