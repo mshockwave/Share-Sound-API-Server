@@ -10,9 +10,13 @@ import (
 
 const(
 	USER_PROFILE_KIND = "UserProfile"
+	STORY_KIND = "Story"
 )
 
 type HashId string
+func (this HashId) String() string {
+	return string(this)
+}
 
 
 type UserAuth struct {
@@ -47,29 +51,9 @@ type StoryMeta struct {
 
 	Description      string
 
-	AudioAttachments []HashId
+	AudioAttachments []AudioAttachmentMeta
 
-	ImageAttachments []HashId
-}
-func (this *StoryMeta) FromProtoBuf(story *protos.Story, email string, storageClient *storage.StorageClient){
-
-	this.Id = common.GetDefaultSecureHash()
-
-	this.UploaderEmail = email
-
-	this.Title = story.Title
-
-	this.Description = story.Description
-
-	for raw := range story.GetImageAttachments() {
-		image := ImageAttachmentMeta{}
-		this.ImageAttachments = append(this.ImageAttachments, (&image).FromProtoBuf(raw))
-	}
-
-	for raw := range story.GetAudioAttachments() {
-		audio := AudioAttachmentMeta{}
-		this.AudioAttachments = append(this.AudioAttachments, (&audio).FromProtoBuf(raw))
-	}
+	ImageAttachments []ImageAttachmentMeta
 }
 
 type AudioAttachmentMeta struct {

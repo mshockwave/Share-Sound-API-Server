@@ -11,12 +11,14 @@ import (
 
 var(
 	UserProfileRootKey *datastore.Key
+	StoryRootKey *datastore.Key
 )
 
 func init(){
 	//Module initializer
 
 	UserProfileRootKey = datastore.NewKey(db.GetContext(), schema.USER_PROFILE_KIND, "admin@sharesound.org", 0, nil)
+	StoryRootKey = datastore.NewKey(db.GetContext(), schema.STORY_KIND, "_null_", 0, nil)
 }
 
 func GetSessionUserId(req *http.Request) (string, error){

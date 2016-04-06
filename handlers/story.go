@@ -8,7 +8,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mshockwave/share-sound-api-server/common"
+	dbSchema "github.com/mshockwave/share-sound-api-server/datastore/schema"
+	db "github.com/mshockwave/share-sound-api-server/datastore"
 	"github.com/mshockwave/share-sound-api-server/handlers/protos"
+	"github.com/mshockwave/share-sound-api-server/storage"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -65,7 +68,7 @@ func handleUpload(resp http.ResponseWriter, req *http.Request){
 		bodyContent = bodyRaw
 	}
 
-	//uid,_ := GetSessionUserId(req)
+	uid,_ := GetSessionUserId(req)
 	story := protos.Story{}
 	if err := proto.Unmarshal(bodyContent, &story); err != nil {
 		common.ResponseStatusAsJson(resp, 400, &common.SimpleResult{
@@ -75,7 +78,62 @@ func handleUpload(resp http.ResponseWriter, req *http.Request){
 		return
 	}
 
+	dbStory := dbSchema.StoryMeta{
+		Id: dbSchema.HashId(common.GetDefaultSecureHash()),
+		UploaderEmail: uid,
 
+		Title: story.Title,
+		Description: story.Description,
+	}
+
+	if client, err := storage.GetNewStorageClient(); err == nil {
+		var audioAttachments []dbSchema.AudioAttachmentMeta
+		for _,item := range story.AudioAttachments {
+			audio := dbSchema.AudioAttachmentMeta{}
+			if err := (&audio).FromProtoBuf(item, client); err == nil {
+				audioAttachments = append(audioAttachments, audio)
+			}
+		}
+		dbStory.AudioAttachments = audioAttachments
+
+		var imgAttachments []dbSchema.ImageAttachmentMeta
+		for _,item := range story.ImageAttachments {
+			img := dbSchema.ImageAttachmentMeta{}
+			if err := (&img).FromProtoBuf(item, client); err == nil {
+				imgAttachments = append(imgAttachments, img)
+			}
+		}
+		dbStory.ImageAttachments = imgAttachments
+	}else{
+		common.LogE.Println("Get storage client error: " + err.Error())
+		common.ResponseStatusAsJson(resp, 500, &common.SimpleResult{
+			Message: "Error",
+		})
+		return
+	}
+
+	if client, err := db.GetNewDataStoreClient(); err == nil {
+		key := client.NewKey(dbSchema.STORY_KIND, dbStory.Id.String(), 0, StoryRootKey)
+		_, e := client.Client.Put(client.Ctx, key, &dbStory)
+		if e != nil {
+			common.LogE.Println("Insert story failed: " + e.Error())
+			common.ResponseStatusAsJson(resp, 500, &common.SimpleResult{
+				Message: "Error",
+				Description: "Upload story failed",
+			})
+			return
+		}
+
+		common.ResponseOkAsJson(resp, &common.SimpleResult{
+			Message: "OK",
+		})
+	}else{
+		common.LogE.Println("Get datastore client error: " + err.Error())
+		common.ResponseStatusAsJson(resp, 500, &common.SimpleResult{
+			Message: "Error",
+		})
+		return
+	}
 }
 
 func ConfigureStoryHandler(router *mux.Router){
